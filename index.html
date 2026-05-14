@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ramp Operations Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0f1117;--bg2:#181c26;--bg3:#1e2433;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --text:#e8eaf0;--text2:#8a8fa8;--text3:#555c72;
+  --blue:#4a9eff;--teal:#2ecfa8;--amber:#f0a030;--red:#e05555;--green:#4caf7d;--purple:#7F77DD;--pink:#D4537E;--coral:#D85A30;--gray:#6b7280;
+  --font:'IBM Plex Sans',sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.6;min-height:100vh;}
+.header{border-bottom:1px solid var(--border);padding:18px 28px;display:flex;align-items:center;justify-content:space-between;background:var(--bg2);}
+.header-left{display:flex;align-items:center;gap:12px;}
+.header-icon{width:34px;height:34px;border-radius:8px;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:17px;}
+.header-title{font-size:15px;font-weight:600;letter-spacing:-0.01em;}
+.header-sub{font-size:11px;color:var(--text2);font-family:var(--mono);}
+.badge{font-size:11px;font-family:var(--mono);background:rgba(74,158,255,0.12);color:var(--blue);border:1px solid rgba(74,158,255,0.25);padding:3px 10px;border-radius:20px;}
+.main{display:grid;grid-template-columns:290px 1fr;min-height:calc(100vh - 63px);}
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:18px;overflow-y:auto;}
+.content{padding:22px 26px;overflow-y:auto;}
+.section-label{font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;margin-top:18px;}
+.section-label:first-child{margin-top:0;}
+.toggle-row{display:flex;gap:6px;margin-bottom:4px;}
+.toggle-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--font);}
+.toggle-btn.active{background:rgba(74,158,255,0.15);color:var(--blue);border-color:rgba(74,158,255,0.3);}
+.ctrl-group{margin-bottom:14px;}
+.ctrl-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.ctrl-name{font-size:12px;color:var(--text2);}
+.ctrl-val{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--text);background:var(--bg3);padding:2px 7px;border-radius:4px;border:1px solid var(--border);}
+.name-field{width:100%;padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);margin-bottom:8px;font-family:var(--font);}
+.name-field:focus{outline:none;border-color:var(--blue);}
+input[type=range]{width:100%;height:4px;-webkit-appearance:none;appearance:none;background:var(--bg3);border-radius:2px;border:1px solid var(--border2);outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--blue);border:2px solid var(--bg2);cursor:pointer;}
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0;}
+.metrics-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:20px;}
+.metric{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+.metric-label{font-size:11px;color:var(--text2);margin-bottom:5px;}
+.metric-val{font-size:20px;font-weight:600;font-family:var(--mono);}
+.ok{color:var(--green);}
+.warn{color:var(--amber);}
+.bad{color:var(--red);}
+.neutral{color:var(--text);}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:18px;}
+.panel-head{padding:9px 14px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:11px;color:var(--text2);display:flex;align-items:center;gap:7px;font-family:var(--mono);}
+.panel-head .dot{width:6px;height:6px;border-radius:50%;background:var(--blue);}
+.panel-body{padding:14px;}
+.tick-row{position:relative;height:16px;margin-left:70px;margin-bottom:6px;}
+.tick{position:absolute;font-size:10px;color:var(--text3);font-family:var(--mono);transform:translateX(-50%);top:0;}
+.tick-line{position:absolute;top:14px;bottom:-6px;width:1px;background:var(--border);}
+.tl-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.tl-name{font-size:11px;font-family:var(--mono);color:var(--text2);min-width:60px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tl-bar-wrap{flex:1;height:20px;background:var(--bg3);border-radius:3px;position:relative;overflow:visible;}
+.tl-seg{position:absolute;top:0;height:100%;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;overflow:hidden;white-space:nowrap;}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11px;color:var(--text2);margin-bottom:18px;}
+.ldot{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:4px;vertical-align:middle;}
+.log-body{max-height:200px;overflow-y:auto;}
+.log-item{display:flex;gap:10px;padding:5px 14px;border-bottom:1px solid var(--border);font-size:12px;}
+.log-item:last-child{border-bottom:none;}
+.log-time{font-family:var(--mono);color:var(--text3);min-width:38px;flex-shrink:0;}
+.log-msgs{display:flex;flex-direction:column;gap:2px;flex:1;}
+.log-msg{color:var(--text2);}
+.log-msg.ok{color:var(--green);}
+.log-msg.warn{color:var(--amber);}
+.log-msg.bad{color:var(--red);}
+.coh-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;}
+.coh-stat{background:var(--bg3);border-radius:6px;padding:8px 10px;}
+.coh-stat-label{font-size:10px;color:var(--text3);margin-bottom:2px;}
+.coh-stat-val{font-size:14px;font-weight:500;font-family:var(--mono);}
+.delay-sub{font-size:10px;color:var(--text3);margin-top:2px;}
+.total-delay{font-size:12px;color:var(--text2);margin-top:8px;}
+.total-delay span{font-weight:500;color:var(--amber);}
+.wf-legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;font-size:11px;color:var(--text2);}
+.wf-train{margin-bottom:26px;}
+.wf-train:last-child{margin-bottom:0;}
+.wf-train-header{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.wf-train-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+.wf-train-name{font-size:14px;font-weight:500;}
+.wf-train-meta{font-size:11px;color:var(--text3);margin-left:auto;}
+.wf-block-wrap{display:flex;flex-direction:column;align-items:center;min-width:0;}
+.wf-block{border-radius:4px 4px 0 0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:rgba(255,255,255,0.9);overflow:hidden;white-space:nowrap;width:100%;box-sizing:border-box;}
+.wf-block-lbl{font-size:10px;color:var(--text3);margin-top:5px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;padding:0 2px;box-sizing:border-box;}
+.wf-bars{margin-top:12px;}
+.wf-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.wf-bar-label{font-size:10px;color:var(--text3);min-width:40px;}
+.wf-bar-track{flex:1;height:9px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.wf-bar-fill{height:100%;border-radius:3px;}
+.wf-bar-val{font-size:11px;font-weight:500;font-family:var(--mono);min-width:48px;text-align:right;}
+.wf-last-drop{display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px 12px;border-radius:6px;background:var(--bg3);border:1px solid var(--border);font-size:12px;}
+.wf-last-drop-label{color:var(--text2);flex:1;}
+.wf-last-drop-time{font-weight:500;font-size:14px;font-family:var(--mono);}
+.wf-divider{border:none;border-top:1px solid var(--border);margin:22px 0;}
+.wf-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;}
+.wf-sum-item{background:var(--bg3);border-radius:8px;padding:12px 14px;}
+.wf-sum-item.highlight{border:1px solid rgba(240,160,48,0.4);background:rgba(240,160,48,0.07);}
+.wf-sum-label{font-size:11px;color:var(--text3);margin-bottom:4px;}
+.wf-sum-label.hl{color:var(--amber);}
+.wf-sum-val{font-size:18px;font-weight:600;font-family:var(--mono);}
+.wf-sum-sub{font-size:10px;color:var(--text3);margin-top:3px;}
+@media(max-width:900px){.main{grid-template-columns:1fr;}.sidebar{border-right:none;border-bottom:1px solid var(--border);}.metrics-row{grid-template-columns:repeat(2,1fr);}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-left">
+    <div class="header-icon">🚂</div>
+    <div>
+      <div class="header-title">Ramp Operations Simulator</div>
+      <div class="header-sub">inbound drop · outbound load · grade analysis</div>
+    </div>
+  </div>
+  <div class="badge">INTERACTIVE</div>
+</div>
+<div class="main">
+  <div class="sidebar">
+    <div class="section-label">Inbound trains</div>
+    <div class="toggle-row">
+      <button class="toggle-btn" id="btn1" onclick="setCount(1)">1 train</button>
+      <button class="toggle-btn active" id="btn2" onclick="setCount(2)">2 trains</button>
+      <button class="toggle-btn" id="btn3" onclick="setCount(3)">3 trains</button>
+    </div>
+    <div id="train-controls"></div>
+    <div class="divider"></div>
+    <div class="section-label">Outbound IHOSA</div>
+    <div class="ctrl-group">
+      <div class="ctrl-header"><span class="ctrl-name">Units to load</span><span class="ctrl-val" id="v-iu">110</span></div>
+      <input type="range" min="80" max="130" step="5" value="110" id="ihosa-units">
+    </div>
+    <div class="divider"></div>
+    <div class="section-label">Ramp throughput</div>
+    <div class="ctrl-group">
+      <div class="ctrl-header"><span class="ctrl-name">Units per hour</span><span class="ctrl-val" id="v-rate">20</span></div>
+      <input type="range" min="15" max="30" step="1" value="20" id="rate">
+    </div>
+    <div class="divider"></div>
+    <div class="section-label">Cars on hand (0300–0900)</div>
+    <div class="ctrl-group">
+      <div class="ctrl-header"><span class="ctrl-name">Footage</span><span class="ctrl-val" id="v-coh">0</span></div>
+      <input type="range" min="0" max="10000" step="100" value="0" id="cars-on-hand">
+    </div>
+    <div class="coh-stats">
+      <div class="coh-stat"><div class="coh-stat-label">Loadable units</div><div class="coh-stat-val" id="coh-units">0</div></div>
+      <div class="coh-stat"><div class="coh-stat-label">Load time</div><div class="coh-stat-val" id="coh-time">0.0 HR</div></div>
+      <div class="coh-stat"><div class="coh-stat-label">Window</div><div class="coh-stat-val" id="coh-window">6.0 HR</div></div>
+    </div>
+    <div class="divider"></div>
+    <div class="section-label">Operational delays</div>
+    <div class="ctrl-group">
+      <div class="ctrl-header"><span class="ctrl-name">Shift change (fixed @ 1500)</span><span class="ctrl-val" id="v-sc">0.0 HR</span></div>
+      <input type="range" min="0" max="60" step="5" value="0" id="shift-change">
+      <div class="delay-sub">Mandatory crew handoff</div>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-header"><span class="ctrl-name">UPS volume break</span><span class="ctrl-val" id="v-ups">0.0 HR</span></div>
+      <input type="range" min="0" max="60" step="5" value="0" id="ups-break">
+      <div class="delay-sub">Skipped while dropping ZPBHO</div>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-header"><span class="ctrl-name">Lunch break</span><span class="ctrl-val" id="v-lunch">1.0 HR</span></div>
+      <input type="range" min="0" max="60" step="5" value="60" id="lunch-break">
+      <div class="delay-sub">Mandatory midday stop</div>
+    </div>
+    <div class="total-delay" id="total-delay-note">Total delay: <span>1.0 HR</span></div>
+  </div>
+  <div class="content">
+    <div class="metrics-row" id="metrics"></div>
+    <div class="panel">
+      <div class="panel-head"><div class="dot"></div>27-hour operational timeline</div>
+      <div class="panel-body">
+        <div class="tick-row" id="tick-row"></div>
+        <div id="tl-rows"></div>
+      </div>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="panel">
+      <div class="panel-head"><div class="dot"></div>Event log — same-time events grouped</div>
+      <div class="log-body" id="event-log"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><div class="dot"></div>Drop time waterfall — ideal vs actual</div>
+      <div class="panel-body" id="wf-body"></div>
+    </div>
+  </div>
+</div>
+<script>
+let trainCount=2;
+const TRAINS={
+  zlbho1:{defLabel:'ZLBHO',arrMin:0,arrMax:14,arrDef:2,uDef:135,color:'#4a9eff'},
+  zpbho:{defLabel:'ZPBHO',arrMin:7,arrMax:13,arrDef:9,uDef:75,color:'#2ecfa8'},
+  zlbho2:{defLabel:'ZLBHO-2',arrMin:14,arrMax:23,arrDef:18,uDef:120,color:'#185FA5'},
+};
+const trainNames={zlbho1:'ZLBHO',zpbho:'ZPBHO',zlbho2:'ZLBHO-2'};
+const fmtH=h=>{const hh=Math.floor(h)%24;const mm=Math.round((h-Math.floor(h))*60);return String(hh).padStart(2,'0')+String(mm).padStart(2,'0');};
+const fmtHR=h=>h.toFixed(1)+' HR';
+const fmtDur=h=>{const m=Math.round(h*60);return m>=60?fmtHR(h):m+'m';};
+const cohUnits=f=>Math.round((f/77)*2);
+const getLabel=key=>(trainNames[key]||TRAINS[key].defLabel).trim()||TRAINS[key].defLabel;
+
+function updateCohStats(){
+  const footage=parseInt(document.getElementById('cars-on-hand').value);
+  const rate=parseInt(document.getElementById('rate').value);
+  const units=cohUnits(footage);
+  const el=document.getElementById('zlbho1-arr');
+  const firstArr=el?parseFloat(el.value):2;
+  document.getElementById('v-coh').textContent=footage.toLocaleString();
+  document.getElementById('coh-units').textContent=units;
+  document.getElementById('coh-time').textContent=fmtHR(units/rate);
+  document.getElementById('coh-window').textContent=fmtHR(Math.max(0,firstArr-3));
+}
+
+function setCount(n){
+  trainCount=n;
+  [1,2,3].forEach(i=>document.getElementById('btn'+i).classList.toggle('active',i===n));
+  buildTrainControls();simulate();
+}
+
+function buildTrainControls(){
+  const wrap=document.getElementById('train-controls');
+  const keys=trainCount===1?['zlbho1']:trainCount===2?['zlbho1','zpbho']:['zlbho1','zpbho','zlbho2'];
+  wrap.innerHTML='';
+  keys.forEach((key,idx)=>{
+    const t=TRAINS[key];
+    const div=document.createElement('div');
+    div.style.cssText='margin-bottom:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);';
+    if(idx===0)div.style.borderTop='none';
+    div.innerHTML=`
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${t.color};flex-shrink:0;"></span>
+        <span style="font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;">Train ${idx+1}</span>
+      </div>
+      <input class="name-field" id="${key}-name" placeholder="${t.defLabel}" value="${trainNames[key]}">
+      <div class="ctrl-group">
+        <div class="ctrl-header"><span class="ctrl-name">Arrival time</span><span class="ctrl-val" id="v-${key}-arr">${fmtH(t.arrDef)}</span></div>
+        <input type="range" min="${t.arrMin}" max="${t.arrMax}" step="0.5" value="${t.arrDef}" id="${key}-arr">
+      </div>
+      <div class="ctrl-group" style="margin-bottom:0;">
+        <div class="ctrl-header"><span class="ctrl-name">Units on train</span><span class="ctrl-val" id="v-${key}-units">${t.uDef}</span></div>
+        <input type="range" min="0" max="200" step="5" value="${t.uDef}" id="${key}-units">
+      </div>`;
+    wrap.appendChild(div);
+    div.querySelector(`#${key}-name`).addEventListener('input',e=>{trainNames[key]=e.target.value;simulate();});
+    div.querySelector(`#${key}-arr`).addEventListener('input',e=>{document.getElementById(`v-${key}-arr`).textContent=fmtH(parseFloat(e.target.value));updateCohStats();simulate();});
+    div.querySelector(`#${key}-units`).addEventListener('input',e=>{document.getElementById(`v-${key}-units`).textContent=e.target.value;simulate();});
+  });
+}
+
+const getVal=(id,def)=>{const el=document.getElementById(id);return el?parseFloat(el.value):def;};
+
+function simulate(){
+  updateCohStats();
+  const rate=parseInt(document.getElementById('rate').value);
+  const ihosaUnits=parseInt(document.getElementById('ihosa-units').value);
+  const shiftMins=parseInt(document.getElementById('shift-change').value);
+  const upsMins=parseInt(document.getElementById('ups-break').value);
+  const lunchMins=parseInt(document.getElementById('lunch-break').value);
+  const footage=parseInt(document.getElementById('cars-on-hand').value);
+  const shiftH=shiftMins/60,upsH=upsMins/60,lunchH=lunchMins/60;
+  const totalDelayH=(shiftMins+upsMins+lunchMins)/60;
+  document.getElementById('total-delay-note').innerHTML=`Total delay: <span>${fmtHR(totalDelayH)}</span>`;
+
+  const activeKeys=trainCount===1?['zlbho1']:trainCount===2?['zlbho1','zpbho']:['zlbho1','zpbho','zlbho2'];
+  const trains=activeKeys.map(key=>({
+    key,label:getLabel(key),color:TRAINS[key].color,
+    arr:getVal(`${key}-arr`,TRAINS[key].arrDef),
+    units:getVal(`${key}-units`,TRAINS[key].uDef),
+    rem:getVal(`${key}-units`,TRAINS[key].uDef),
+  }));
+  trains.sort((a,b)=>a.arr-b.arr);
+
+  const firstArr=trains[0].arr;
+  const cohLoadUnits=cohUnits(footage);
+  const cohLoadTime=cohLoadUnits/rate;
+  const cohStart=3,cohEnd=Math.min(cohStart+cohLoadTime,firstArr);
+  const cohActualUnits=Math.round(Math.min(cohEnd-cohStart,cohLoadTime)*rate);
+  const ihosaHours=ihosaUnits/rate,ihosaDeadline=17,ihosaStart=ihosaDeadline-ihosaHours;
+  const SHIFT_AT=15;
+  const zpbhoTrain=trains.find(t=>t.key==='zpbho');
+  const zpbhoArr=zpbhoTrain?.arr??9;
+
+  const events=[];
+  const segs={};
+  activeKeys.forEach(k=>segs[k]=[]);
+  segs.ihosa=[];segs.idle=[];segs.shift=[];segs.ups=[];segs.lunch=[];segs.coh=[];
+
+  if(cohLoadUnits>0){
+    events.push({time:cohStart,msg:`Cars on hand loading begins — ${cohActualUnits} units from ${footage.toLocaleString()} ft`,cls:''});
+    segs.coh.push({start:cohStart,end:cohEnd});
+    if(cohEnd<firstArr)events.push({time:cohEnd,msg:`Cars on hand fully loaded (${cohActualUnits} units)`,cls:'ok'});
+    else events.push({time:cohEnd,msg:`Cars on hand loading paused at first train arrival`,cls:'warn'});
+  }
+  trains.forEach(t=>events.push({time:t.arr,msg:`${t.label} arrives — ${Math.round(t.rem)} units to drop`,cls:''}));
+  events.push({time:ihosaStart,msg:`Must start loading IHOSA (${ihosaUnits} units @ ${rate}/hr)`,cls:'warn'});
+
+  const idleStart=cohLoadUnits>0?cohEnd:0;
+  if(firstArr>idleStart)segs.idle.push({start:idleStart,end:firstArr});
+
+  let clock=firstArr;
+  let delaysDone={shift:false,ups:false,lunch:false};
+  const trainBD={};
+  activeKeys.forEach(k=>trainBD[k]={shift:0,ups:0,lunch:0,outbound:0});
+
+  const placeDelay=(type,dur,label)=>{
+    if(dur<=0)return;
+    segs[type].push({start:clock,end:clock+dur});
+    events.push({time:clock,msg:`${label} begins (${fmtHR(dur)})`,cls:'warn'});
+    trains.filter(t=>t.rem>0.5).forEach(t=>{trainBD[t.key][type]+=dur;});
+    clock+=dur;
+    events.push({time:clock,msg:`${label} ends — resuming`,cls:''});
+  };
+
+  const nextAvailable=()=>trains.find(t=>t.rem>0.5&&clock>=t.arr);
+
+  const runDrop=maxClock=>{
+    while(clock<maxClock-0.001){
+      const activeTrain=nextAvailable();
+      const droppingZpbho=activeTrain&&activeTrain.key==='zpbho';
+      if(!delaysDone.shift&&shiftH>0&&clock>=SHIFT_AT){delaysDone.shift=true;placeDelay('shift',shiftH,'Shift change');continue;}
+      if(!delaysDone.lunch&&lunchH>0&&clock>=11.5&&clock<=14){delaysDone.lunch=true;placeDelay('lunch',lunchH,'Lunch break');continue;}
+      if(!delaysDone.ups&&upsH>0&&clock>=zpbhoArr+0.25&&!droppingZpbho){delaysDone.ups=true;placeDelay('ups',upsH,'UPS break');continue;}
+      if(!delaysDone.ups&&upsH>0&&clock>=zpbhoArr+0.25&&droppingZpbho){
+        delaysDone.ups=true;
+        events.push({time:clock,msg:`UPS break skipped — currently dropping ${activeTrain.label} (UPS volume)`,cls:'warn'});
+      }
+      const nextDelayAt=Math.min((!delaysDone.shift&&shiftH>0)?SHIFT_AT:Infinity,(!delaysDone.lunch&&lunchH>0)?11.5:Infinity,maxClock);
+      const nextTrainArr=trains.filter(t=>t.rem>0.5&&t.arr>clock).reduce((mn,t)=>Math.min(mn,t.arr),Infinity);
+      const workUntil=Math.min(nextDelayAt,nextTrainArr,maxClock);
+      if(!activeTrain){
+        if(nextTrainArr<maxClock&&nextTrainArr>clock){segs.idle.push({start:clock,end:Math.min(nextTrainArr,maxClock)});clock=Math.min(nextTrainArr,maxClock);}
+        else clock=workUntil;continue;
+      }
+      const canWork=Math.min(workUntil-clock,activeTrain.rem/rate);
+      if(canWork<0.001){clock=workUntil;continue;}
+      segs[activeTrain.key].push({start:clock,end:clock+canWork});
+      activeTrain.rem-=canWork*rate;
+      if(activeTrain.rem<0.5)activeTrain.rem=0;
+      clock+=canWork;
+      if(activeTrain.rem===0)events.push({time:clock,msg:`${activeTrain.label} fully dropped`,cls:'ok'});
+    }
+  };
+
+  runDrop(ihosaStart);
+
+  trains.forEach(t=>{
+    const dropped=Math.round(t.units-Math.max(0,t.rem));
+    const stillUndropped=Math.round(Math.max(0,t.rem));
+    if(stillUndropped>0){
+      events.push({time:ihosaStart,msg:`IHOSA load starts — ${t.label}: ${stillUndropped} of ${Math.round(t.units)} units still undropped (${dropped} of ${Math.round(t.units)} dropped)`,cls:'bad'});
+    }
+  });
+
+  trains.filter(t=>t.rem>0.5).forEach(t=>{trainBD[t.key].outbound+=ihosaDeadline-ihosaStart;});
+  segs.ihosa.push({start:ihosaStart,end:ihosaDeadline});
+  clock=ihosaDeadline;
+  events.push({time:ihosaDeadline,msg:`IHOSA loaded and departed`,cls:'ok'});
+
+  let finalClock=clock;
+  const trainDropTimes={};
+  activeKeys.forEach(k=>trainDropTimes[k]=null);
+
+  if(Math.round(trains.reduce((s,t)=>s+Math.max(0,t.rem),0))>0){
+    let rc=clock;
+    trains.forEach(t=>{
+      if(t.rem>0){const dropEnd=rc+t.rem/rate;segs[t.key].push({start:rc,end:dropEnd});trainDropTimes[t.key]=dropEnd;rc=dropEnd;}
+    });
+    finalClock=rc;
+    events.push({time:finalClock,msg:`All inbound finally cleared (${fmtHR(finalClock-ihosaDeadline)} after IHOSA)`,cls:'bad'});
+  } else {
+    trains.forEach(t=>{const s=segs[t.key];if(s&&s.length>0)trainDropTimes[t.key]=s[s.length-1].end;});
+  }
+
+  segs.ihosa.push({start:24,end:27});
+  events.push({time:24,msg:`Loading MHOAS outbound (overnight)`,cls:''});
+  events.push({time:27,msg:`MHOAS loaded and departed`,cls:'ok'});
+
+  const dayEnd=27;
+  const lp=h=>((h/dayEnd)*100).toFixed(3)+'%';
+  const wp=(s,e)=>(((e-s)/dayEnd)*100).toFixed(3)+'%';
+
+  const tickRow=document.getElementById('tick-row');
+  tickRow.innerHTML='';
+  [0,3,6,9,12,15,17,20,24,27].forEach(h=>{
+    const t=document.createElement('div');t.className='tick';t.style.left=lp(h);t.textContent=fmtH(h);tickRow.appendChild(t);
+    const l=document.createElement('div');l.className='tick-line';l.style.left=lp(h);tickRow.appendChild(l);
+  });
+
+  const rowDefs=[
+    {key:'coh',label:'Cars/hand',color:'#7F77DD'},
+    ...trains.map(t=>({key:t.key,label:t.label,color:t.color})),
+    {key:'ihosa',label:'Outbound',color:'#f0a030'},
+    {key:'shift',label:'Shift chg',color:'#a78bfa'},
+    {key:'ups',label:'UPS',color:'#D4537E'},
+    {key:'lunch',label:'Lunch',color:'#D85A30'},
+    {key:'idle',label:'Idle',color:'#4a5568'},
+  ];
+  const tlRows=document.getElementById('tl-rows');
+  tlRows.innerHTML='';
+  rowDefs.forEach(rd=>{
+    if(!segs[rd.key]||!segs[rd.key].length)return;
+    const row=document.createElement('div');row.className='tl-row';
+    const nm=document.createElement('div');nm.className='tl-name';nm.textContent=rd.label;nm.title=rd.label;
+    const wrap=document.createElement('div');wrap.className='tl-bar-wrap';
+    segs[rd.key].forEach(seg=>{
+      if(seg.end<=seg.start)return;
+      const s=document.createElement('div');s.className='tl-seg';
+      s.style.left=lp(seg.start);s.style.width=wp(seg.start,seg.end);
+      s.style.background=rd.color;
+      s.style.color=rd.color==='#f0a030'?'rgba(0,0,0,0.7)':'rgba(255,255,255,0.9)';
+      const dur=seg.end-seg.start;
+      if(dur>0.6)s.textContent=dur.toFixed(1)+' HR';
+      wrap.appendChild(s);
+    });
+    row.appendChild(nm);row.appendChild(wrap);tlRows.appendChild(row);
+  });
+
+  const stranded=Math.round(trains.reduce((s,t)=>s+Math.max(0,t.rem),0));
+  let mHTML=`<div class="metric"><div class="metric-label">IHOSA load start</div><div class="metric-val neutral">${fmtH(ihosaStart)}</div></div>`;
+  mHTML+=`<div class="metric"><div class="metric-label">Total delay</div><div class="metric-val ${totalDelayH>0?'warn':'ok'}">${fmtHR(totalDelayH)}</div></div>`;
+  mHTML+=`<div class="metric"><div class="metric-label">Stranded at 1700</div><div class="metric-val ${stranded>0?'bad':'ok'}">${stranded}</div></div>`;
+  if(cohLoadUnits>0)mHTML+=`<div class="metric"><div class="metric-label">COH units loaded</div><div class="metric-val ok">${cohActualUnits}</div></div>`;
+  trains.forEach(t=>{const dropH=finalClock-t.arr;mHTML+=`<div class="metric"><div class="metric-label">${t.label} drop time</div><div class="metric-val ${dropH>5?'bad':dropH>3?'warn':'ok'}">${dropH.toFixed(1)} HR</div></div>`;});
+  document.getElementById('metrics').innerHTML=mHTML;
+
+  document.getElementById('legend').innerHTML=
+    (cohLoadUnits>0?`<span><span class="ldot" style="background:#7F77DD;"></span>Cars on hand</span>`:'')+
+    trains.map(t=>`<span><span class="ldot" style="background:${t.color};"></span>${t.label}</span>`).join('')+
+    `<span><span class="ldot" style="background:#f0a030;"></span>Loading IHOSA</span>`+
+    `<span><span class="ldot" style="background:#4a5568;"></span>Idle</span>`+
+    (shiftMins>0?`<span><span class="ldot" style="background:#a78bfa;"></span>Shift change</span>`:'')+
+    (upsMins>0&&segs.ups.length>0?`<span><span class="ldot" style="background:#D4537E;"></span>UPS break</span>`:'')+
+    (lunchMins>0?`<span><span class="ldot" style="background:#D85A30;"></span>Lunch</span>`:'');
+
+  events.sort((a,b)=>a.time-b.time);
+  const grouped=[];
+  events.forEach(e=>{
+    const last=grouped[grouped.length-1];
+    if(last&&Math.abs(last.time-e.time)<0.01)last.entries.push({msg:e.msg,cls:e.cls});
+    else grouped.push({time:e.time,entries:[{msg:e.msg,cls:e.cls}]});
+  });
+  document.getElementById('event-log').innerHTML=grouped.map(g=>`
+    <div class="log-item"><span class="log-time">${fmtH(g.time)}</span><div class="log-msgs">${g.entries.map(e=>`<span class="log-msg ${e.cls}">${e.msg}</span>`).join('')}</div></div>`).join('');
+
+  buildWaterfall(trains,finalClock,ihosaStart,ihosaDeadline,rate,trainBD,trainDropTimes,stranded,totalDelayH,shiftMins,upsMins,lunchMins);
+}
+
+function buildWaterfall(trains,finalClock,ihosaStart,ihosaDeadline,rate,bd,trainDropTimes,stranded,totalDelayH,shiftMins,upsMins,lunchMins){
+  const maxH=Math.max(...trains.map(t=>finalClock-t.arr));
+  const BAR_MAX_PX=160;
+  let html='';
+  html+=`<div class="wf-legend">
+    <span><span class="ldot" style="background:#4a9eff;opacity:0.8;"></span>Pure drop time</span>
+    ${shiftMins>0?`<span><span class="ldot" style="background:#a78bfa;"></span>Shift change</span>`:''}
+    ${upsMins>0?`<span><span class="ldot" style="background:#D4537E;"></span>UPS break</span>`:''}
+    ${lunchMins>0?`<span><span class="ldot" style="background:#D85A30;"></span>Lunch break</span>`:''}
+    <span><span class="ldot" style="background:#f0a030;"></span>Outbound lockout</span>
+  </div>`;
+  const totalOutboundLockoutH=trains.reduce((s,t)=>s+(bd[t.key].outbound||0),0);
+  const trainsAffected=trains.filter(t=>(bd[t.key].outbound||0)>0).length;
+  trains.forEach((t,tIdx)=>{
+    const pureH=t.units/rate;
+    const shiftH=bd[t.key].shift||0;
+    const upsH=bd[t.key].ups||0;
+    const lunchH=bd[t.key].lunch||0;
+    const outboundH=bd[t.key].outbound||0;
+    const actualH=finalClock-t.arr;
+    const mandatoryH=shiftH+upsH+lunchH;
+    const overheadH=actualH-pureH;
+    const overheadCls=overheadH>2?'bad':overheadH>0.5?'warn':'ok';
+    const lastDropTime=trainDropTimes[t.key];
+    const lastDropCls=lastDropTime&&lastDropTime>ihosaDeadline?'bad':lastDropTime&&lastDropTime>ihosaDeadline-0.5?'warn':'ok';
+    const segments=[
+      {h:pureH,color:t.color,label:'Drop time'},
+      {h:lunchH,color:'#D85A30',label:'Lunch'},
+      {h:upsH,color:'#D4537E',label:'UPS break'},
+      {h:shiftH,color:'#a78bfa',label:'Shift change'},
+      {h:outboundH,color:'#f0a030',label:'Outbound lockout'},
+    ].filter(s=>s.h>0.01);
+    const totalH=segments.reduce((s,seg)=>s+seg.h,0);
+    const blocksHTML=segments.map((seg,i)=>{
+      const px=Math.max(8,Math.round((seg.h/maxH)*BAR_MAX_PX));
+      const arrow=i<segments.length-1?`<div style="display:flex;align-items:flex-end;padding-bottom:18px;flex-shrink:0;"><div style="width:10px;height:1px;background:rgba(255,255,255,0.15);"></div></div>`:'';
+      return `<div class="wf-block-wrap" style="flex:${Math.max(0.4,seg.h)};min-width:40px;max-width:110px;"><div class="wf-block" style="height:${px}px;background:${seg.color};color:${seg.color==='#f0a030'?'rgba(0,0,0,0.7)':'rgba(255,255,255,0.9)'};">${seg.h>0.3?fmtDur(seg.h):''}</div><div class="wf-block-lbl">${seg.label}</div></div>${arrow}`;
+    }).join('');
+    const scaleMax=maxH*1.1;
+    const idealPct=Math.min(100,(pureH/scaleMax)*100).toFixed(1);
+    const actualPct=Math.min(100,(totalH/scaleMax)*100).toFixed(1);
+    const totalColor=overheadH>2?'#e05555':overheadH>0.5?'#f0a030':t.color;
+    html+=`<div class="wf-train">
+      <div class="wf-train-header"><div class="wf-train-dot" style="background:${t.color};"></div><div class="wf-train-name">${t.label}</div><div class="wf-train-meta">Arrived ${fmtH(t.arr)} &middot; ${Math.round(t.units)} units</div></div>
+      <div style="display:flex;align-items:flex-end;gap:0;margin-bottom:10px;">${blocksHTML}
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:18px;margin-left:16px;gap:3px;">
+          <div style="font-size:26px;font-weight:600;line-height:1;font-family:var(--mono);color:${totalColor};">${fmtHR(totalH)}</div>
+          <div style="font-size:11px;color:var(--text3);">actual drop time</div>
+          <div style="height:6px;"></div>
+          <div style="font-size:11px;color:var(--text2);">Pure drop: <span style="font-weight:500;color:var(--green);">${fmtDur(pureH)}</span></div>
+          ${mandatoryH>0?`<div style="font-size:11px;color:var(--text2);">Mandatory delays: <span style="font-weight:500;color:var(--amber);">${fmtDur(mandatoryH)}</span></div>`:''}
+          ${outboundH>0?`<div style="font-size:11px;color:var(--text2);">Outbound lockout: <span style="font-weight:500;color:var(--amber);">${fmtDur(outboundH)}</span></div>`:''}
+          <div style="height:3px;"></div>
+          <div style="font-size:12px;font-weight:500;font-family:var(--mono);color:${overheadH>2?'var(--red)':overheadH>0.5?'var(--amber)':'var(--green)'};">${overheadH>0.05?'+'+fmtDur(overheadH)+' over ideal':'On time'}</div>
+        </div>
+      </div>
+      <div class="wf-bars">
+        <div class="wf-bar-row"><div class="wf-bar-label">Ideal</div><div class="wf-bar-track"><div class="wf-bar-fill" style="width:${idealPct}%;background:${t.color};opacity:0.4;"></div></div><div class="wf-bar-val ok">${fmtHR(pureH)}</div></div>
+        <div class="wf-bar-row"><div class="wf-bar-label">Actual</div><div class="wf-bar-track"><div class="wf-bar-fill" style="width:${actualPct}%;background:${totalColor};"></div></div><div class="wf-bar-val ${overheadCls}">${fmtHR(totalH)}</div></div>
+      </div>
+      <div class="wf-last-drop">
+        <span class="wf-last-drop-label">Est. last unit dropped</span>
+        <span class="wf-last-drop-time ${lastDropTime?lastDropCls:'neutral'}">${lastDropTime?fmtH(lastDropTime):'—'}</span>
+        ${lastDropTime&&lastDropTime>ihosaDeadline?`<span style="font-size:11px;color:var(--red);">&nbsp;(${fmtDur(lastDropTime-ihosaDeadline)} after 1700 cutoff)</span>`:''}
+        ${lastDropTime&&lastDropTime<=ihosaDeadline?`<span style="font-size:11px;color:var(--green);">&nbsp;(before 1700 cutoff)</span>`:''}
+      </div>
+    </div>`;
+    if(tIdx<trains.length-1)html+='<div class="wf-divider"></div>';
+  });
+  const worstH=Math.max(...trains.map(t=>finalClock-t.arr));
+  const bestIdealH=Math.min(...trains.map(t=>t.units/rate));
+  const lockoutCls=totalOutboundLockoutH>1?'bad':totalOutboundLockoutH>0?'warn':'ok';
+  html+=`<div class="wf-divider"></div>
+  <div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Day summary</div>
+  <div class="wf-summary">
+    <div class="wf-sum-item"><div class="wf-sum-label">Best possible drop</div><div class="wf-sum-val ok">${fmtHR(bestIdealH)}</div></div>
+    <div class="wf-sum-item"><div class="wf-sum-label">Worst actual drop</div><div class="wf-sum-val ${worstH>5?'bad':worstH>3?'warn':'ok'}">${fmtHR(worstH)}</div></div>
+    <div class="wf-sum-item ${totalOutboundLockoutH>0?'highlight':''}"><div class="wf-sum-label ${totalOutboundLockoutH>0?'hl':''}">Outbound lockout time</div><div class="wf-sum-val ${lockoutCls}">${fmtHR(totalOutboundLockoutH)}</div><div class="wf-sum-sub">${trainsAffected>0?`${trainsAffected} of ${trains.length} train${trains.length>1?'s':''} interrupted`:'no trains interrupted'}</div></div>
+    <div class="wf-sum-item"><div class="wf-sum-label">Units left at 1700</div><div class="wf-sum-val ${stranded>0?'bad':'ok'}">${stranded}</div></div>
+  </div>`;
+  document.getElementById('wf-body').innerHTML=html;
+}
+
+document.getElementById('ihosa-units').addEventListener('input',e=>{document.getElementById('v-iu').textContent=e.target.value;simulate();});
+document.getElementById('rate').addEventListener('input',e=>{document.getElementById('v-rate').textContent=e.target.value;simulate();});
+document.getElementById('shift-change').addEventListener('input',e=>{document.getElementById('v-sc').textContent=(parseInt(e.target.value)/60).toFixed(1)+' HR';simulate();});
+document.getElementById('ups-break').addEventListener('input',e=>{document.getElementById('v-ups').textContent=(parseInt(e.target.value)/60).toFixed(1)+' HR';simulate();});
+document.getElementById('lunch-break').addEventListener('input',e=>{document.getElementById('v-lunch').textContent=(parseInt(e.target.value)/60).toFixed(1)+' HR';simulate();});
+document.getElementById('cars-on-hand').addEventListener('input',()=>simulate());
+buildTrainControls();
+simulate();
+</script>
+</body>
+</html>
